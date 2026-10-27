@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinType - Zero-Friction Financial Ledger</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Plus Jakarta Sans", "sans-serif"],
+            },
+            colors: {
+              brand: {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1d4ed8",
+                900: "#1e3a8a",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .gradient-text {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .hero-bg {
+        background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.08) 0%, rgba(248, 250, 252, 0) 70%);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-blue-600 selection:text-white">
+    <!-- NAVBAR -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div>
+            <span class="font-black text-lg text-slate-900 tracking-tight">FinType <span class="text-blue-600"> </span></span>
+            <span class="ml-1.5 text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">v1.0</span>
+          </div>
+        </div>
+
+        <!-- Desktop Nav Links -->
+        <div class="hidden md:flex items-center gap-8 text-xs font-bold text-slate-600">
+          <a href="#features" class="hover:text-blue-600 transition-colors">Fitur Unggulan</a>
+          <a href="#how-it-works" class="hover:text-blue-600 transition-colors">Cara Kerja</a>
+          <a href="#ai-coach" class="hover:text-blue-600 transition-colors">AI Coach</a>
+          <a href="#pricing" class="hover:text-blue-600 transition-colors">Keunggulan</a>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-3">
+          <a
+            href="https://ilhamdwiputranto.pythonanywhere.com/"
+            class="px-4 py-2 text-xs font-bold text-slate-700 hover:text-blue-600 transition-colors"
+            >Masuk</a
+          >
+          <a
+            href="https://ilhamdwiputranto.pythonanywhere.com/"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95">
+            Mulai Gratis
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="relative pt-32 pb-20 md:pt-40 md:pb-28 hero-bg overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto space-y-6">
+          <div
+            class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 border border-blue-200/60 rounded-full text-blue-700 text-xs font-bold tracking-wide">
+            <span class="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse"></span>
+            Mobile-First Zero-Friction Financial Ledger
+          </div>
+
+          <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+            Catat Keuangan Secepat <br class="hidden sm:inline" />
+            <span class="gradient-text">Mengetik Pesan Chat</span>
+          </h1>
+
+          <p class="text-slate-600 text-base sm:text-lg font-medium leading-relaxed max-w-2xl mx-auto">
+            Tanpa form rumit. FinType secara otomatis memproses kalimat natural menjadi tipe transaksi, nominal, kategori, hingga alokasi tabungan
+            target secara real-time.
+          </p>
+
+          <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://ilhamdwiputranto.pythonanywhere.com/"
+              class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-blue-500/25 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+              <span>Coba Sekarang Gratis</span>
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+            <a
+              href="#how-it-works"
+              class="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-sm rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-play text-blue-600"></i>
+              <span>Lihat Cara Kerja</span>
+            </a>
+          </div>
+
+          <!-- Live Demo Simulation Card -->
+          <div class="pt-10 max-w-xl mx-auto">
+            <div class="bg-white p-5 rounded-3xl shadow-2xl border border-slate-200/80 text-left space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                  <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                  <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                </div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">⚡ Live Natural Parser v4.2</span>
+              </div>
+
+              <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-700">"Beli kopi 25rb di Alfamart pake Dompetku kemarin"</span>
+                <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-lg">Auto-Parsed</span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div class="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                  <div class="text-[10px] font-bold text-slate-400">Nominal</div>
+                  <div class="font-bold text-slate-900">Rp 25.000</div>
+                </div>
+                <div class="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                  <div class="text-[10px] font-bold text-slate-400">Kategori</div>
+                  <div class="font-bold text-slate-900">Minuman</div>
+                </div>
+                <div class="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                  <div class="text-[10px] font-bold text-slate-400">Sumber Dana</div>
+                  <div class="font-bold text-blue-600">Dompetku</div>
+                </div>
+                <div class="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
+                  <div class="text-[10px] font-bold text-slate-400">Lokasi</div>
+                  <div class="font-bold text-slate-900">Alfamart</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS SUMMARY SECTION -->
+    <section class="py-12 bg-white border-y border-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div>
+            <div class="text-3xl font-black text-slate-900">Zero-Friction</div>
+            <div class="text-xs font-semibold text-slate-500 mt-1">Tanpa Form Berbelit</div>
+          </div>
+          <div>
+            <div class="text-3xl font-black text-blue-600">Real-Time</div>
+            <div class="text-xs font-semibold text-slate-500 mt-1">Cek Saldo Wallet Langsung</div>
+          </div>
+          <div>
+            <div class="text-3xl font-black text-slate-900">Shared Ledger</div>
+            <div class="text-xs font-semibold text-slate-500 mt-1">Kelola Bersama Pasangan/Tim</div>
+          </div>
+          <div>
+            <div class="text-3xl font-black text-emerald-600">AI Coach</div>
+            <div class="text-xs font-semibold text-slate-500 mt-1">Analisis Finansial Cerdas</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section id="features" class="py-20 bg-slate-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+        <div class="text-center max-w-2xl mx-auto space-y-3">
+          <h2 class="text-xs font-extrabold text-blue-600 uppercase tracking-widest">Fitur Unggulan</h2>
+          <p class="text-3xl font-black text-slate-900 tracking-tight">Dirancang Khusus untuk Kemudahan & Efisiensi</p>
+          <p class="text-slate-600 text-sm font-medium">FinType memadukan teknologi pemrosesan bahasa alami dengan manajemen kas profesional.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Natural Text & Voice Parser</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Cukup ketik atau ucapkan kalimat biasa. Parser pintar akan mendeteksi tipe transaksi (Pengeluaran, Pemasukan, Transfer, Goal Savings),
+              nominal, hingga lokasi secara otomatis.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Multi-Wallet & Saldo Real-Time</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Pantau saldo Kas Utama, BCA, Dompetku, atau GoPay. Sistem secara real-time menampilkan apakah kecukupan saldo terpenuhi sebelum
+              transaksi disimpan.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-users shadow-sm"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Shared Ledger Kolaboratif</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Bagikan Kode Undangan khusus untuk mencatat keuangan bersama pasangan, keluarga, atau rekan bisnis dalam satu buku kas terpadu secara
+              aman.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-bullseye"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Automated Savings Goals</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Tetapkan target dana darurat atau impian. Setiap kali Anda mencatat alokasi tabungan, progress bar dan estimasi tercapainya target
+              diperbarui secara presisi.
+            </p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Custom Regex Rules (JSON)</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Buat aturan kategorisasi sesuai istilah pribadi Anda. Dukungan penuh untuk Ekspor dan Impor file aturan JSON demi kemudahan migrasi
+              data.
+            </p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 space-y-4">
+            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl font-black">
+              <i class="fa-solid fa-file-receipt"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Upload Struk & Export CSV</h3>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              Lampirkan foto struk belanjaan untuk bukti fisik, dan unduh seluruh riwayat pembukuan kas ke dalam format CSV kapan saja tanpa batasan.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI ADVISOR SECTION -->
+    <section id="ai-coach" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center relative z-10">
+            <div class="space-y-6">
+              <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold text-blue-200">
+                <i class="fa-solid fa-robot"></i> AI Financial Coach Integrated
+              </div>
+              <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Analisis Finansial Otomatis yang Memahami Kebiasaan Anda</h2>
+              <p class="text-blue-100 text-xs sm:text-sm leading-relaxed">
+                FinType memberikan rekomendasi dan wawasan keuangan secara langsung berdasarkan rasio tabungan, pengeluaran terbesar, serta pencapaian
+                target tabungan kas Anda.
+              </p>
+              <div class="space-y-3 pt-2">
+                <div class="flex items-center gap-3 text-xs">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                  <span>Peringatan dini saat pengeluaran melampaui pemasukan</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                  <span>Evaluasi otomatis rasio alokasi dana darurat</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                  <span>Deteksi transaksi butuh penanganan (Need Action)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 space-y-4 text-xs">
+              <div class="font-bold text-blue-200 uppercase tracking-wider text-[10px]">Sample Insight Output:</div>
+              <div class="bg-white/10 p-3 rounded-xl border border-white/10">
+                ⚠️ Pengeluaran Anda (Rp 3.450.000) melebihi Pemasukan bulan ini. Kurangi alokasi kategori <strong>Makanan</strong>.
+              </div>
+              <div class="bg-white/10 p-3 rounded-xl border border-white/10">
+                🎉 Rasio Tabungan Kas Ledger: 35%. Arus kas Anda bulan ini sangat sehat!
+              </div>
+              <div class="bg-white/10 p-3 rounded-xl border border-white/10">
+                🎯 Total Tabungan Goal Terkumpul: Rp 15.000.000 (1/2 goal tercapai!).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FOOTER -->
+    <section class="py-20 bg-slate-900 text-white">
+      <div class="max-w-4xl mx-auto px-4 text-center space-y-6">
+        <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Siap Memulai Pembukuan Keuangan Tanpa Ribet?</h2>
+        <p class="text-slate-400 text-sm max-w-xl mx-auto">
+          Bergabunglah dengan FinType sekarang dan nikmati kemudahan mencatat keuangan secara instan.
+        </p>
+        <div class="pt-4">
+          <a
+            href="https://ilhamdwiputranto.pythonanywhere.com/"
+            class="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-2xl shadow-xl shadow-blue-500/30 transition-all hover:scale-105">
+            <span>Buat Akun Gratis Sekarang</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 py-8 text-slate-500 text-xs border-t border-slate-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>&copy; 2026 FinType. All rights reserved.</div>
+        <div class="flex items-center gap-6">
+          <a href="https://ilhamdwiputranto.pythonanywhere.com/" class="hover:text-slate-400">Login</a>
+          <a href="https://ilhamdwiputranto.pythonanywhere.com/" class="hover:text-slate-400">Register</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
