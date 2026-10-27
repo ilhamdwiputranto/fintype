@@ -1,0 +1,22 @@
+﻿# Python / Cache
+__pycache__/
+*.pyc
+venv/
+
+# SQLite Database
+*.db
+fintype_pro.db
+
+# Dynamic User Uploads
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Environment Variables
+.env
+
+# IDE / Editor Settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.swp

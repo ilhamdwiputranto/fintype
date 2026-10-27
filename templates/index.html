@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FinType Pro v4.6 - Zero-Friction Ledger</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1rem); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans pb-28 antialiased selection:bg-blue-500 selection:text-white"
+      x-data="fintypeApp()" x-init="initData()">
+
+    <!-- HEADER TOP BAR -->
+    <header class="sticky top-0 z-30 bg-blue-600 text-white shadow-md">
+        <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+            
+            <!-- Ledger Switcher Dropdown -->
+            <div class="relative" x-data="{ openLedgerMenu: false }">
+                <button @click="openLedgerMenu = !openLedgerMenu" class="flex items-center gap-2 bg-blue-700/60 hover:bg-blue-700 px-3 py-1.5 rounded-xl border border-blue-400/30 transition-all text-xs font-bold">
+                    <i class="fa-solid fa-book-bookmark text-blue-200"></i>
+                    <span x-text="currentLedger ? currentLedger.name : 'Memuat...'" class="max-w-[130px] truncate"></span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-blue-200"></i>
+                </button>
+
+                <!-- Dropdown Menu -->
+                <div x-show="openLedgerMenu" @click.outside="openLedgerMenu = false" x-cloak
+                     class="absolute left-0 mt-2 w-64 bg-white text-slate-800 rounded-2xl shadow-2xl border border-blue-100 py-2 z-50 overflow-hidden text-xs">
+                    <div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Daftar Buku Keuangan</div>
+                    
+                    <template x-for="l in ledgers" :key="l.id">
+                        <button @click="switchLedger(l.id); openLedgerMenu = false" 
+                                class="w-full text-left px-4 py-2.5 hover:bg-blue-50 flex items-center justify-between"
+                                :class="currentLedger && currentLedger.id === l.id ? 'bg-blue-50/80 font-bold text-blue-600' : ''">
+                            <span x-text="l.name" class="truncate"></span>
+                            <i x-show="currentLedger && currentLedger.id === l.id" class="fa-solid fa-circle-check text-blue-600"></i>
+                        </button>
+                    </template>
+
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <button @click="openCreateLedgerModal(); openLedgerMenu = false" class="w-full text-left px-4 py-2 text-blue-600 hover:bg-blue-50 font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle"></i> Buat Ledger Baru
+                    </button>
+                    <button @click="openJoinLedgerModal(); openLedgerMenu = false" class="w-full text-left px-4 py-2 text-indigo-600 hover:bg-indigo-50 font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-key"></i> Gabung via Kode Undangan
+                    </button>
+                    <template x-if="currentLedger && currentLedger.role !== 'owner'">
+                        <button @click="leaveCurrentLedger()" class="w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-2 border-t border-slate-100 mt-1">
+                            <i class="fa-solid fa-right-from-bracket"></i> Keluar dari Ledger Ini
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Title / Brand & Settings Gear -->
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <div class="text-[10px] font-bold text-blue-200">Hai, <span x-text="user ? user.full_name : ''"></span></div>
+                    <div class="text-xs font-black tracking-tight">FinType Pro v4.6</div>
+                </div>
+                <button @click="openSettingsModal = true" class="w-9 h-9 bg-blue-700/80 hover:bg-blue-700 rounded-xl flex items-center justify-center text-white shadow-inner transition-all">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER WITH TABS -->
+    <main class="max-w-xl mx-auto px-4 py-5 space-y-5">
+
+        <!-- TAB 1: RINGKASAN (SUMMARY) -->
+        <div x-show="currentTab === 'summary'" class="space-y-4 sm:space-y-5" x-cloak>
+            
+            <!-- HERO LEDGER CARD HEADER -->
+            <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-5 rounded-3xl text-white shadow-xl shadow-blue-500/15 space-y-3 relative overflow-hidden">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-blue-100 mb-1 border border-white/20">
+                            <i class="fa-solid fa-book-bookmark"></i>
+                            <span x-text="currentLedger ? (currentLedger.invite_code.startsWith('PRIV') ? 'Buku Pribadi' : 'Shared Ledger') : 'Ledger'"></span>
+                        </div>
+                        <h1 class="text-xl font-black tracking-tight" x-text="currentLedger ? currentLedger.name : 'Buku Keuangan'"></h1>
+                    </div>
+                    <!-- Time Period Selector -->
+                    <select x-model="summaryPeriod" @change="calculateSummary()" class="bg-blue-800/80 border border-blue-400/40 text-white text-[10px] font-bold rounded-xl px-2.5 py-1.5 focus:outline-none">
+                        <option value="all">Semua Waktu</option>
+                        <option value="this_month">Bulan Ini</option>
+                        <option value="last_30">30 Hari Terakhir</option>
+                    </select>
+                </div>
+
+                <!-- Members Chip List -->
+                <div class="pt-2 border-t border-white/15 flex items-center gap-2 flex-wrap text-[10px]">
+                    <span class="text-blue-200 font-bold"><i class="fa-solid fa-users"></i> Anggota:</span>
+                    <template x-for="m in ledgerMembers" :key="m.id">
+                        <span class="bg-white/20 px-2 py-0.5 rounded-lg text-white font-medium flex items-center gap-1">
+                            <span x-text="m.full_name"></span>
+                            <span class="text-[8px] font-bold text-blue-200" x-text="m.role === 'owner' ? '👑 Owner' : '👤'"></span>
+                        </span>
+                    </template>
+                </div>
+            </div>
+
+            <!-- STATS CARDS: PEMASUKAN & PENGELUARAN -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center gap-2 text-emerald-600 text-xs font-bold mb-1">
+                        <i class="fa-solid fa-arrow-down-left"></i> Pemasukan
+                    </div>
+                    <div class="text-lg font-black text-slate-800" x-text="formatRupiah(summary.pemasukan)"></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center gap-2 text-rose-600 text-xs font-bold mb-1">
+                        <i class="fa-solid fa-arrow-up-right"></i> Pengeluaran
+                    </div>
+                    <div class="text-lg font-black text-slate-800" x-text="formatRupiah(summary.pengeluaran)"></div>
+                </div>
+            </div>
+
+            <!-- SEPARATE STATS CARDS: SELISIH KAS & TABUNGAN GOAL -->
+            <div class="grid grid-cols-2 gap-3">
+                <!-- 1. SELISIH KAS (PEMASUKAN - PENGELUARAN) -->
+                <div class="bg-white p-4 rounded-2xl border border-blue-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">⚖️ Selisih Kas (Net)</div>
+                        <div class="text-base font-black" :class="summary.net_balance >= 0 ? 'text-blue-600' : 'text-rose-600'" x-text="formatRupiah(summary.net_balance)"></div>
+                    </div>
+                    <div class="text-[9px] text-slate-400 mt-1">Pemasukan - Pengeluaran</div>
+                </div>
+
+                <!-- 2. TOTAL TABUNGAN GOAL (AKUMULASI GOAL ONLY) -->
+                <div class="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">🎯 Tabungan Goal</div>
+                        <div class="text-base font-black text-slate-800" x-text="formatRupiah(summary.goal_savings)"></div>
+                    </div>
+                    <div class="text-[9px] text-amber-600/80 mt-1">Akumulasi Seluruh Goal</div>
+                </div>
+            </div>
+
+            <!-- SECTION LEDGER BUDGET BULANAN -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center text-xs font-bold">
+                            <i class="fa-solid fa-calculator"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">Budget Pengeluaran Bulanan</h3>
+                            <div class="text-[10px] text-slate-400" x-text="currentLedger && currentLedger.budget_limit > 0 ? 'Limit: ' + formatRupiah(currentLedger.budget_limit) : 'Batas budget belum diatur'"></div>
+                        </div>
+                    </div>
+                    <button @click="openBudgetModal = true" class="text-xs text-blue-600 font-bold hover:underline">
+                        Set Budget
+                    </button>
+                </div>
+
+                <template x-if="currentLedger && currentLedger.budget_limit > 0">
+                    <div class="space-y-1.5 pt-1">
+                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                            <div class="h-full transition-all duration-500"
+                                 :class="summary.pengeluaran > currentLedger.budget_limit ? 'bg-rose-600' : (summary.pengeluaran > currentLedger.budget_limit * 0.8 ? 'bg-amber-500' : 'bg-emerald-500')"
+                                 :style="'width: ' + Math.min(100, Math.round((summary.pengeluaran / currentLedger.budget_limit) * 100)) + '%'"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-bold">
+                            <span :class="summary.pengeluaran > currentLedger.budget_limit ? 'text-rose-600' : 'text-slate-600'"
+                                  x-text="formatRupiah(summary.pengeluaran) + ' (' + Math.round((summary.pengeluaran / currentLedger.budget_limit) * 100) + '%)'"></span>
+                            <template x-if="summary.pengeluaran > currentLedger.budget_limit">
+                                <span class="text-rose-600">⚠️ Over Budget <span x-text="formatRupiah(summary.pengeluaran - currentLedger.budget_limit)"></span></span>
+                            </template>
+                            <template x-if="summary.pengeluaran <= currentLedger.budget_limit">
+                                <span class="text-emerald-600">Sisa: <span x-text="formatRupiah(currentLedger.budget_limit - summary.pengeluaran)"></span></span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- AI FINANCIAL COACH CARD -->
+            <div class="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-xs font-bold">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <h2 class="text-xs font-black text-slate-800 uppercase tracking-wider">AI Financial Coach</h2>
+                    </div>
+                    <button @click="loadAIAnalysis()" class="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right" :class="isLoadingAI ? 'animate-spin' : ''"></i> Refresh
+                    </button>
+                </div>
+                <div class="space-y-2 text-xs text-slate-600">
+                    <template x-for="(insight, idx) in aiInsights" :key="idx">
+                        <div class="p-2.5 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-2">
+                            <span class="text-blue-500 mt-0.5">•</span>
+                            <span x-html="insight"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- RECENT TRANSACTIONS PREVIEW -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider">Catatan Terbaru</h3>
+                    <button @click="currentTab = 'history'" class="text-xs text-blue-600 font-bold hover:underline">Lihat Semua ➔</button>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    <template x-for="t in allTransactions.slice(0, 5)" :key="t.id">
+                        <div class="py-2.5 flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold"
+                                     :class="t.type === 'Pemasukan' ? 'bg-emerald-100 text-emerald-600' : (t.type === 'Transfer' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600')">
+                                    <i :class="t.type === 'Pemasukan' ? 'fa-solid fa-arrow-down' : (t.type === 'Transfer' ? 'fa-solid fa-right-left' : 'fa-solid fa-cart-shopping')"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-slate-800" x-text="t.item"></div>
+                                    <div class="text-[10px] text-slate-400">
+                                        <span class="font-bold text-blue-600" x-text="t.user_name"></span> • <span x-text="t.category"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-bold" :class="t.type === 'Pemasukan' ? 'text-emerald-600' : 'text-slate-800'" x-text="formatRupiah(t.nominal)"></div>
+                                <div class="text-[10px] text-slate-400" x-text="t.date_time"></div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="allTransactions.length === 0">
+                        <div class="text-center py-6 text-xs text-slate-400">Belum ada transaksi di ledger ini.</div>
+                    </template>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: KANTONG (WALLETS & GOALS) -->
+        <div x-show="currentTab === 'goals'" class="space-y-6" x-cloak>
+            
+            <!-- SECTION 1: WALLETS / DOMPET USER (AUTO-GENERATED) -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-black text-slate-800">👛 Daftar Kantong / Dompet</h2>
+                        <p class="text-xs text-slate-500">Tergenerate otomatis dari catatan transaksi Anda</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <template x-for="w in wallets" :key="w.name">
+                        <button @click="filterHistoryByWallet(w.name)" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm text-left hover:border-blue-300 transition-all space-y-1">
+                            <div class="flex items-center justify-between text-xs font-bold text-slate-600">
+                                <span class="truncate" x-text="w.name"></span>
+                                <i class="fa-solid fa-wallet text-blue-500 text-xs"></i>
+                            </div>
+                            <div class="text-sm font-black text-slate-800" x-text="formatRupiah(w.balance)"></div>
+                            <div class="text-[9px] text-blue-600 font-bold hover:underline pt-1">Klik untuk lihat riwayat ➔</div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- SECTION 2: GOALS (TARGET KEUANGAN) -->
+            <div class="space-y-4 pt-4 border-t border-slate-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-black text-slate-800">🎯 Target Keuangan / Goals</h2>
+                        <p class="text-xs text-slate-500">Akumulasi otomatis dari kata kunci catatan Anda</p>
+                    </div>
+                    <button @click="openAddGoalModal()" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Tambah Goal
+                    </button>
+                </div>
+
+                <!-- GOALS LIST -->
+                <div class="grid grid-cols-1 gap-4">
+                    <template x-for="g in goals" :key="g.id">
+                        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
+                            <!-- Goal Image Header if available -->
+                            <template x-if="g.image_url">
+                                <div class="h-32 w-full bg-slate-100 relative">
+                                    <img :src="g.image_url" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
+                                    <div class="absolute bottom-3 left-3 text-white font-black text-sm" x-text="g.title"></div>
+                                </div>
+                            </template>
+
+                            <div class="p-4 space-y-3">
+                                <template x-if="!g.image_url">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold text-base">
+                                                🎯
+                                            </div>
+                                            <div>
+                                                <h3 class="font-black text-slate-800 text-sm" x-text="g.title"></h3>
+                                                <div class="text-[10px] text-slate-400" x-text="'Target: ' + g.target_date"></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <button @click="openEditGoalModal(g)" class="w-7 h-7 text-slate-400 hover:text-blue-600 rounded-lg flex items-center justify-center text-xs">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            <button @click="deleteGoal(g.id)" class="w-7 h-7 text-slate-400 hover:text-rose-600 rounded-lg flex items-center justify-center text-xs">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <template x-if="g.image_url">
+                                    <div class="flex items-center justify-between text-xs text-slate-400">
+                                        <span>Target: <strong class="text-slate-700" x-text="g.target_date"></strong></span>
+                                        <div class="flex items-center gap-1">
+                                            <button @click="openEditGoalModal(g)" class="text-blue-600 font-bold hover:underline">Edit</button> |
+                                            <button @click="deleteGoal(g.id)" class="text-rose-600 font-bold hover:underline">Hapus</button>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Progress Bar -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-xs">
+                                        <span class="font-bold text-slate-700" x-text="formatRupiah(g.calculated_amount)"></span>
+                                        <span class="text-slate-400" x-text="'/ ' + formatRupiah(g.target_amount)"></span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                        <div class="bg-blue-600 h-full transition-all duration-500"
+                                             :style="'width: ' + Math.min(100, Math.round((g.calculated_amount / g.target_amount) * 100)) + '%'"></div>
+                                    </div>
+                                    <div class="text-[10px] text-right font-bold text-blue-600"
+                                         x-text="Math.min(100, Math.round((g.calculated_amount / g.target_amount) * 100)) + '% Tercapai'"></div>
+                                </div>
+
+                                <!-- Keywords -->
+                                <template x-if="g.keywords">
+                                    <div class="text-[10px] bg-slate-50 p-2 rounded-xl border border-slate-100 text-slate-500">
+                                        <span class="font-bold">Kata Kunci Automasi:</span> <span x-text="g.keywords"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="goals.length === 0">
+                        <div class="text-center py-8 bg-white rounded-2xl border border-slate-200/80 p-6 space-y-2">
+                            <div class="text-3xl">🎯</div>
+                            <div class="text-xs font-bold text-slate-700">Belum ada Target Keuangan</div>
+                            <p class="text-[10px] text-slate-400">Buat goal seperti "Beli Rumah" atau "Liburan" untuk melacak tabungan otomatis.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: KATEGORI (PENGELUARAN & PEMASUKAN + DIAGRAM STATISTIK) -->
+        <div x-show="currentTab === 'categories'" class="space-y-5" x-cloak>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-black text-slate-800">Auto-Generated Categories</h2>
+                    <p class="text-xs text-slate-500">Statistik & kategori terbentuk otomatis dari riwayat catatan</p>
+                </div>
+            </div>
+
+            <!-- Sub Tab Toggle -->
+            <div class="flex bg-slate-200/70 p-1 rounded-xl text-xs font-bold">
+                <button @click="catTab = 'pengeluaran'" class="flex-1 py-2 rounded-lg transition-all"
+                        :class="catTab === 'pengeluaran' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600'">
+                    🔴 Pengeluaran
+                </button>
+                <button @click="catTab = 'pemasukan'" class="flex-1 py-2 rounded-lg transition-all"
+                        :class="catTab === 'pemasukan' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-600'">
+                    🟢 Pemasukan
+                </button>
+                <button @click="catTab = 'transfer'" class="flex-1 py-2 rounded-lg transition-all"
+                        :class="catTab === 'transfer' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600'">
+                    🔄 Transfer & Goal
+                </button>
+            </div>
+
+            <!-- DIAGRAM STATISTIK KATEGORI (PROPORSI BAR CHART) -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                <h3 class="text-xs font-black text-slate-700 uppercase tracking-wider">📊 Diagram Proporsi Kategori</h3>
+                
+                <!-- Stacked Progress Bar -->
+                <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex">
+                    <template x-for="(c, idx) in (catTab === 'pengeluaran' ? categories.pengeluaran : (catTab === 'pemasukan' ? categories.pemasukan : (categories.transfer || [])))" :key="c.name">
+                        <div class="h-full transition-all" 
+                             :style="'width: ' + getCatPercent(c.total, catTab) + '%; background-color: ' + getCatColor(idx)"
+                             :title="c.name + ': ' + getCatPercent(c.total, catTab) + '%'"></div>
+                    </template>
+                </div>
+
+                <!-- Legend List -->
+                <div class="grid grid-cols-2 gap-2 pt-1 text-[10px]">
+                    <template x-for="(c, idx) in (catTab === 'pengeluaran' ? categories.pengeluaran : (catTab === 'pemasukan' ? categories.pemasukan : (categories.transfer || [])))" :key="c.name">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="'background-color: ' + getCatColor(idx)"></span>
+                            <span class="font-bold text-slate-700 truncate" x-text="c.name"></span>
+                            <span class="text-slate-400" x-text="'(' + getCatPercent(c.total, catTab) + '%)'"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- PENGELUARAN LIST -->
+            <div x-show="catTab === 'pengeluaran'" class="space-y-3">
+                <template x-for="c in categories.pengeluaran" :key="c.name">
+                    <button @click="filterHistoryByCategory(c.name)" class="w-full text-left bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-blue-300 transition-all space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="font-black text-slate-800 text-xs" x-text="c.name"></div>
+                            <div class="font-black text-rose-600 text-xs" x-text="formatRupiah(c.total)"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                            <span x-text="c.count + ' Transaksi'"></span>
+                            <span class="truncate max-w-[180px]" x-text="c.items.join(', ')"></span>
+                        </div>
+                    </button>
+                </template>
+                <template x-if="categories.pengeluaran.length === 0">
+                    <div class="text-center py-8 text-xs text-slate-400">Belum ada kategori pengeluaran.</div>
+                </template>
+            </div>
+
+            <!-- PEMASUKAN LIST -->
+            <div x-show="catTab === 'pemasukan'" class="space-y-3">
+                <template x-for="c in categories.pemasukan" :key="c.name">
+                    <button @click="filterHistoryByCategory(c.name)" class="w-full text-left bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-emerald-300 transition-all space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="font-black text-slate-800 text-xs" x-text="c.name"></div>
+                            <div class="font-black text-emerald-600 text-xs" x-text="formatRupiah(c.total)"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                            <span x-text="c.count + ' Transaksi'"></span>
+                            <span class="truncate max-w-[180px]" x-text="c.items.join(', ')"></span>
+                        </div>
+                    </button>
+                </template>
+                <template x-if="categories.pemasukan.length === 0">
+                    <div class="text-center py-8 text-xs text-slate-400">Belum ada kategori pemasukan.</div>
+                </template>
+            </div>
+
+            <!-- TRANSFER & GOAL LIST -->
+            <div x-show="catTab === 'transfer'" class="space-y-3">
+                <template x-for="c in (categories.transfer || [])" :key="c.name">
+                    <button @click="filterHistoryByCategory(c.name)" class="w-full text-left bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-300 transition-all space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="font-black text-slate-800 text-xs" x-text="c.name"></div>
+                            <div class="font-black text-indigo-600 text-xs" x-text="formatRupiah(c.total)"></div>
+                        </div>
+                        <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                            <span x-text="c.count + ' Transaksi'"></span>
+                            <span class="truncate max-w-[180px]" x-text="c.items.join(', ')"></span>
+                        </div>
+                    </button>
+                </template>
+                <template x-if="!categories.transfer || categories.transfer.length === 0">
+                    <div class="text-center py-8 text-xs text-slate-400">Belum ada kategori transfer atau goal.</div>
+                </template>
+            </div>
+        </div>
+
+        <!-- TAB 4: HISTORY (RIWAYAT TRANSAKSI) -->
+        <div x-show="currentTab === 'history'" class="space-y-4 relative" x-cloak>
+            <div class="flex items-center justify-between">
+                <h2 class="text-base font-black text-slate-800">Riwayat Transaksi</h2>
+                <div class="flex items-center gap-2">
+                    <button @click="openImportCsvModal = true" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-blue-200">
+                        <i class="fa-solid fa-file-import"></i> Impor CSV
+                    </button>
+                    <a href="/export/csv" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel text-emerald-600"></i> Export CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECTION NEED ACTION (BELUM TERKATEGORI SPESIFIK / INCOMPLETE) -->
+            <template x-if="needActionTxns.length > 0">
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3 shadow-sm">
+                    <div class="flex items-center justify-between text-amber-800 font-bold text-xs">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation text-amber-600"></i> Need Action (<span x-text="needActionTxns.length"></span>)
+                        </span>
+                        <span class="text-[10px] text-amber-600 font-normal">Belum terkategori spesifik</span>
+                    </div>
+                    <div class="space-y-2">
+                        <template x-for="t in needActionTxns" :key="'na-' + t.id">
+                            <div class="bg-white p-3 rounded-xl border border-amber-100 flex items-center justify-between text-xs">
+                                <div>
+                                    <div class="font-bold text-slate-800" x-text="t.raw_text"></div>
+                                    <div class="text-[10px] text-amber-600" x-text="'Kategori: ' + t.category + ' • Nominal: ' + formatRupiah(t.nominal)"></div>
+                                </div>
+                                <button @click="openEditTransactionModal(t)" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[10px] font-bold">
+                                    ✏️ Perbaiki
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- SEARCH & DATEPICKER FILTERS -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm space-y-2 text-xs">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" x-model="historySearch" @input.debounce.300ms="loadHistory()" 
+                           placeholder="Cari item, dompet, lokasi, atau dicatat oleh..." 
+                           class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Dari Tanggal:</label>
+                        <input type="date" x-model="historyStartDate" @change="loadHistory()" 
+                               class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">Sampai Tanggal:</label>
+                        <input type="date" x-model="historyEndDate" @change="loadHistory()" 
+                               class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
+                    </div>
+                </div>
+            </div>
+
+            <!-- HISTORY LIST -->
+            <div class="space-y-3">
+                <template x-for="t in transactions" :key="t.id">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
+                                     :class="t.type === 'Pemasukan' ? 'bg-emerald-100 text-emerald-600' : (t.type === 'Transfer' ? 'bg-indigo-100 text-indigo-600' : 'bg-rose-100 text-rose-600')">
+                                    <i :class="t.type === 'Pemasukan' ? 'fa-solid fa-arrow-down' : (t.type === 'Transfer' ? 'fa-solid fa-right-left' : 'fa-solid fa-cart-shopping')"></i>
+                                </div>
+                                <div>
+                                    <div class="font-black text-slate-800 text-xs" x-text="t.item"></div>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                        <span class="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md" x-text="t.user_name"></span>
+                                        <span>•</span>
+                                        <span x-text="t.category"></span>
+                                        <span x-show="t.source_fund !== '-'">• <strong class="text-slate-600" x-text="t.source_fund"></strong></span>
+                                        <span x-show="t.location !== '-'">• <span x-text="t.location"></span></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="font-black text-xs" :class="t.type === 'Pemasukan' ? 'text-emerald-600' : 'text-slate-800'" x-text="formatRupiah(t.nominal)"></div>
+                                <div class="text-[10px] text-slate-400" x-text="t.date_time"></div>
+                            </div>
+                        </div>
+
+                        <!-- Notes & Image Thumbnail -->
+                        <div x-show="t.notes || t.receipt_image" class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                            <div x-show="t.notes" class="italic" x-text="'Memo: ' + t.notes"></div>
+                            <template x-if="t.receipt_image">
+                                <button @click="openImageLightbox(t.receipt_image)" class="text-blue-600 font-bold hover:underline flex items-center gap-1">
+                                    <i class="fa-solid fa-image"></i> Lihat Struk
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Actions (Edit & Delete) -->
+                        <div class="pt-2 border-t border-slate-100 flex justify-end gap-2 text-xs">
+                            <button @click="openEditTransactionModal(t)" class="text-blue-600 font-bold hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                            <button @click="deleteTransaction(t.id)" class="text-rose-600 font-bold hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="transactions.length === 0">
+                    <div class="text-center py-10 bg-white rounded-2xl border border-slate-200/80 p-6 text-xs text-slate-400">
+                        Tidak ada transaksi ditemukan.
+                    </div>
+                </template>
+            </div>
+
+            <!-- FLOATING AUTO-RESET FILTER BUTTON (POJOK KANAN BAWAH) -->
+            <div x-show="historySearch || historyStartDate || historyEndDate" class="fixed bottom-24 right-5 z-40" x-cloak>
+                <button @click="resetHistoryFilter()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs font-bold transition-all active:scale-90 border-2 border-white">
+                    <i class="fa-solid fa-filter-circle-xmark"></i>
+                    <span>Reset Filter</span>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- FLOATING BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-2xl pb-safe">
+        <div class="max-w-xl mx-auto px-2 py-2 flex items-center justify-around relative">
+            
+            <!-- Tab 1: Summary -->
+            <button @click="currentTab = 'summary'" class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all"
+                    :class="currentTab === 'summary' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px]">Ringkasan</span>
+            </button>
+
+            <!-- Tab 2: Kantong -->
+            <button @click="currentTab = 'goals'" class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all"
+                    :class="currentTab === 'goals' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'">
+                <i class="fa-solid fa-wallet text-lg"></i>
+                <span class="text-[10px]">Kantong</span>
+            </button>
+
+            <!-- CENTER FLOATING ACTION BUTTON (+) -->
+            <div class="relative -top-5">
+                <button @click="openInputModal()" class="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg shadow-blue-500/40 flex items-center justify-center text-2xl transition-all active:scale-90 border-4 border-white">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+
+            <!-- Tab 4: Kategori -->
+            <button @click="currentTab = 'categories'" class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all"
+                    :class="currentTab === 'categories' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'">
+                <i class="fa-solid fa-tags text-lg"></i>
+                <span class="text-[10px]">Kategori</span>
+            </button>
+
+            <!-- Tab 5: History -->
+            <button @click="currentTab = 'history'" class="flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all"
+                    :class="currentTab === 'history' ? 'text-blue-600 font-bold' : 'text-slate-400 hover:text-slate-600'">
+                <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                <span class="text-[10px]">History</span>
+            </button>
+
+        </div>
+    </nav>
+
+
+    <!-- ================= MODALS SECTION ================= -->
+
+    <!-- MODAL 1: INPUT TRANSAKSI (ZERO-FRICTION MODAL) -->
+    <div x-show="showInputModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4" x-cloak>
+        <div @click.outside="showInputModal = false" class="bg-white w-full max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+            
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-black text-slate-800 text-sm flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span> Catat Transaksi Baru
+                </h3>
+                <button @click="showInputModal = false" class="text-slate-400 hover:text-slate-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- 1. LIVE PARSER PREVIEW AT TOP -->
+            <div class="bg-blue-50/80 border border-blue-100 p-3.5 rounded-2xl space-y-2">
+                <div class="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center justify-between">
+                    <span>⚡ Live Parser Preview</span>
+                    <span class="text-[9px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded" x-text="parsedResult.type"></span>
+                </div>
+
+                <!-- VALIDATION STATUS BANNER -->
+                <div class="p-2 rounded-xl text-[10px] font-bold flex items-center gap-1.5"
+                     :class="parsedResult.is_complete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                    <i class="fa-solid" :class="parsedResult.is_complete ? 'fa-circle-check text-emerald-600' : 'fa-triangle-exclamation text-amber-600'"></i>
+                    <span x-text="parsedResult.is_complete ? 'Format Transaksi Lengkap & Valid' : 'Format Belum Lengkap (Akan masuk Need Action jika disimpan)'"></span>
+                </div>
+
+                <!-- 2 SEPARATE COLUMNS FOR KATEGORI AND ITEM -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-white p-2 rounded-xl border border-blue-100">
+                        <div class="text-[9px] text-slate-400 font-bold">Aksi:</div>
+                        <div class="font-bold text-blue-900 truncate" x-text="parsedResult.aksi"></div>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-blue-100">
+                        <div class="text-[9px] text-slate-400 font-bold">Nominal:</div>
+                        <div class="font-bold text-emerald-600 truncate" x-text="parsedResult.formatted_nominal"></div>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-blue-100">
+                        <div class="text-[9px] text-slate-400 font-bold">🏷️ Kategori:</div>
+                        <div class="font-bold text-slate-800 truncate" x-text="parsedResult.category"></div>
+                    </div>
+                    <div class="bg-white p-2 rounded-xl border border-blue-100">
+                        <div class="text-[9px] text-slate-400 font-bold">📦 Item:</div>
+                        <div class="font-bold text-slate-800 truncate" x-text="parsedResult.item"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-blue-100/60">
+                    <div>Dari/Ke: <strong class="text-slate-700" x-text="parsedResult.source_fund + (parsedResult.target_fund !== '-' ? ' ➔ ' + parsedResult.target_fund : '')"></strong></div>
+                    <div>Waktu: <strong class="text-slate-700" x-text="parsedResult.date_time"></strong></div>
+                </div>
+
+                <!-- ESTIMATED WALLET BALANCE FORMULA -->
+                <div class="bg-white p-2 rounded-xl border border-blue-100 text-[10px] space-y-1">
+                    <div class="font-bold text-slate-500 uppercase">📊 Estimasi Perubahan Saldo Kas:</div>
+                    <div class="font-bold" :class="estimatedWalletInfo.is_ok ? 'text-emerald-600' : 'text-rose-600'" x-text="estimatedWalletInfo.text"></div>
+                </div>
+            </div>
+
+            <!-- MAIN INPUT TEXT BOX + MIC SPEECH TO TEXT -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-700">Tulis Kalimat Transaksi:</label>
+                <div class="relative flex items-center">
+                    <input type="text" x-model="inputText" @input="updateParser()" 
+                           placeholder="misal: Beli kopi 25rb pake dompet kemarin..." 
+                           class="w-full pl-4 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all">
+                    
+                    <!-- Mic Button -->
+                    <button @click="toggleSpeechToText()" 
+                            class="absolute right-2 w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all"
+                            :class="isListening ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- QUICK EXAMPLE CHIPS -->
+            <div class="space-y-1">
+                <div class="text-[10px] font-bold text-slate-400">Contoh Cepat (Klik untuk mencoba):</div>
+                <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+                    <button @click="inputText = 'Beli kopi 25rb di alfamart pake dompet kemarin'; updateParser()" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg text-[10px] font-medium border border-slate-200">
+                        🛒 Beli kopi 25rb
+                    </button>
+                    <button @click="inputText = 'Gaji 5jt masuk ke BCA'; updateParser()" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 rounded-lg text-[10px] font-medium border border-slate-200">
+                        💵 Gaji 5jt
+                    </button>
+                    <button @click="inputText = 'Transfer 500rb dari dompet ke Bank BRI'; updateParser()" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg text-[10px] font-medium border border-slate-200">
+                        🔄 Transfer 500rb
+                    </button>
+                    <button @click="inputText = 'Menabung 100rb untuk goal rumah pakai dompet'; updateParser()" class="shrink-0 px-2.5 py-1 bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-600 rounded-lg text-[10px] font-medium border border-slate-200">
+                        🎯 Menabung 100rb
+                    </button>
+                </div>
+            </div>
+
+            <!-- TOGGLES: KETERANGAN & UPLOAD STRUK -->
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center gap-4 text-xs font-bold text-slate-600">
+                    <button @click="showNotesToggle = !showNotesToggle" class="flex items-center gap-1.5 hover:text-blue-600">
+                        <i class="fa-solid" :class="showNotesToggle ? 'fa-square-check text-blue-600' : 'fa-square text-slate-300'"></i>
+                        <span>📝 Keterangan / Notes</span>
+                    </button>
+                    <button @click="showImageToggle = !showImageToggle" class="flex items-center gap-1.5 hover:text-blue-600">
+                        <i class="fa-solid" :class="showImageToggle ? 'fa-square-check text-blue-600' : 'fa-square text-slate-300'"></i>
+                        <span>📷 Upload Struk / Gambar</span>
+                    </button>
+                </div>
+
+                <div x-show="showNotesToggle" x-cloak>
+                    <input type="text" x-model="inputNotes" placeholder="Catatan tambahan..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                </div>
+
+                <div x-show="showImageToggle" x-cloak>
+                    <input type="file" id="inputReceiptFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
+                </div>
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button @click="submitTransaction()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-sm shadow-lg shadow-blue-500/20 transition-all active:scale-98">
+                Simpan Catatan Transaksi
+            </button>
+
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDIT TRANSACTION (REAL-TIME RE-PARSER) -->
+    <div x-show="showEditTxnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="showEditTxnModal = false" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar text-xs">
+            
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-black text-slate-800 text-sm">Edit Transaksi</h3>
+                <button @click="showEditTxnModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- EDIT RAW TEXT WITH LIVE RE-PARSE -->
+            <div class="space-y-1">
+                <label class="font-bold text-slate-700">Kalimat Asli (Raw Text):</label>
+                <input type="text" x-model="editTxnData.raw_text" @input="reparseEditTxnLive()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500">
+                <p class="text-[10px] text-slate-400">Setiap perubahan kalimat akan secara otomatis memperbarui field di bawah ini secara real-time.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="font-bold text-slate-600">Tipe:</label>
+                    <select x-model="editTxnData.type" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        <option value="Pengeluaran">Pengeluaran</option>
+                        <option value="Pemasukan">Pemasukan</option>
+                        <option value="Transfer">Transfer</option>
+                        <option value="Goal Savings">Goal Savings</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Aksi:</label>
+                    <input type="text" x-model="editTxnData.aksi" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Kategori:</label>
+                    <input type="text" x-model="editTxnData.category" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Item:</label>
+                    <input type="text" x-model="editTxnData.item" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Nominal (Rp):</label>
+                    <input type="number" x-model="editTxnData.nominal" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Tanggal:</label>
+                    <input type="date" x-model="editTxnData.date_time" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Sumber Dana:</label>
+                    <input type="text" x-model="editTxnData.source_fund" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-600">Tujuan Dana:</label>
+                    <input type="text" x-model="editTxnData.target_fund" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+            </div>
+
+            <div>
+                <label class="font-bold text-slate-600">Catatan / Keterangan:</label>
+                <input type="text" x-model="editTxnData.notes" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            </div>
+
+            <div>
+                <label class="font-bold text-slate-600">Ganti Struk / Gambar (Opsional):</label>
+                <input type="file" id="editReceiptFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600">
+            </div>
+
+            <button @click="saveEditTransaction()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md">
+                Simpan Perubahan Transaksi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADD/EDIT GOAL -->
+    <div x-show="showGoalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="showGoalModal = false" class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar text-xs">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-black text-slate-800 text-sm" x-text="isEditGoal ? 'Edit Target Keuangan' : 'Tambah Goal Baru'"></h3>
+                <button @click="showGoalModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="font-bold text-slate-700">Judul Goal:</label>
+                    <input type="text" x-model="goalForm.title" placeholder="misal: Beli Rumah Impian" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Target Nominal (Rp):</label>
+                    <input type="number" x-model="goalForm.target_amount" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Target Tanggal:</label>
+                    <input type="date" x-model="goalForm.target_date" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700">Kata Kunci Automasi (Dipisah koma):</label>
+                    <input type="text" x-model="goalForm.keywords" placeholder="rumah, beli rumah, rumah impian" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                
+                <!-- Upload Goal Image or URL -->
+                <div class="space-y-2">
+                    <label class="font-bold text-slate-700">Gambar Cover Goal:</label>
+                    <input type="file" id="goalImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-50 file:text-amber-700">
+                    <div class="text-[10px] text-slate-400 text-center">- atau gunakan URL -</div>
+                    <input type="text" x-model="goalForm.image_url" placeholder="https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                </div>
+            </div>
+
+            <button @click="saveGoal()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md">
+                Simpan Goal
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 4: SETTINGS, PROFIL & CUSTOM REGEX RULES -->
+    <div x-show="openSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="openSettingsModal = false" class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar text-xs">
+            
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-black text-slate-800 text-sm">Pengaturan FinType Pro</h3>
+                <button @click="openSettingsModal = false" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Settings Sub Tab Toggle -->
+            <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                <button @click="settingsTab = 'profile'" class="flex-1 py-1.5 rounded-lg transition-all"
+                        :class="settingsTab === 'profile' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'">
+                    👤 Profil
+                </button>
+                <button @click="settingsTab = 'regex'" class="flex-1 py-1.5 rounded-lg transition-all"
+                        :class="settingsTab === 'regex' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'">
+                    ⚙️ Custom Regex
+                </button>
+                <button @click="settingsTab = 'ledger'" class="flex-1 py-1.5 rounded-lg transition-all"
+                        :class="settingsTab === 'ledger' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'">
+                    📁 Data & Impor
+                </button>
+            </div>
+
+            <!-- TAB 1: PROFIL & SECURITY -->
+            <div x-show="settingsTab === 'profile'" class="space-y-3" x-cloak>
+                <div>
+                    <label class="font-bold text-slate-700">Nama Lengkap (Display Name):</label>
+                    <input type="text" x-model="profileForm.full_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <div class="pt-2 border-t border-slate-100 space-y-2">
+                    <div class="font-bold text-slate-700">Ubah Password (Opsional):</div>
+                    <input type="password" x-model="profileForm.old_password" placeholder="Password Lama" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    <input type="password" x-model="profileForm.new_password" placeholder="Password Baru (min. 6 karakter)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+                <button @click="saveProfile()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md">
+                    Simpan Perubahan Profil
+                </button>
+            </div>
+
+            <!-- TAB 2: CUSTOM REGEX RULES -->
+            <div x-show="settingsTab === 'regex'" class="space-y-3" x-cloak>
+                <div class="space-y-1">
+                    <div class="font-bold text-slate-700">Tambah Aturan Kata Kunci Kustom:</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" x-model="newRuleKey" placeholder="Kata Kunci (misal: seblak)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        <input type="text" x-model="newRuleVal" placeholder="Kategori (misal: Makanan Spesial)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <button @click="addCustomRule()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm mt-1">
+                        + Tambah Aturan Regex
+                    </button>
+                </div>
+
+                <!-- Export / Import Custom Rules JSON -->
+                <div class="pt-2 border-t border-slate-100 flex items-center gap-2">
+                    <a href="/api/custom-rules/export" class="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-center border border-slate-200 text-[10px]">
+                        📥 Export JSON Rules
+                    </a>
+                    <button @click="openImportRulesModal = true" class="flex-1 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-center border border-blue-200 text-[10px]">
+                        📤 Import JSON Rules
+                    </button>
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <div class="font-bold text-slate-700">Daftar Aturan Kustom Aktif:</div>
+                    <div class="max-h-36 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-xl p-2 bg-slate-50">
+                        <template x-for="r in customRules" :key="r.id">
+                            <div class="py-1.5 flex items-center justify-between">
+                                <div>
+                                    <span class="font-bold text-blue-600" x-text="r.rule_key"></span> ➔ <span class="font-bold text-slate-700" x-text="r.rule_value"></span>
+                                </div>
+                                <button @click="deleteCustomRule(r.id)" class="text-rose-600 font-bold hover:underline text-[10px]">
+                                    Hapus
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="customRules.length === 0">
+                            <div class="text-center py-3 text-slate-400 text-[10px]">Belum ada aturan kustom.</div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: DATA, LEDGER & IMPOR -->
+            <div x-show="settingsTab === 'ledger'" class="space-y-3" x-cloak>
+                <!-- Ledger Invite Code -->
+                <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-100 space-y-1">
+                    <div class="text-[10px] font-bold text-blue-600 uppercase">Kode Undangan Ledger Aktif</div>
+                    <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-blue-200 font-mono font-bold text-slate-800">
+                        <span x-text="currentLedger ? currentLedger.invite_code : ''"></span>
+                        <button @click="navigator.clipboard.writeText(currentLedger.invite_code); alert('Kode Undangan berhasil disalin!')" class="text-blue-600 font-bold hover:underline">
+                            Salin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <button @click="openImportCsvModal = true; openSettingsModal = false" class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl border border-blue-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-import"></i> Impor CSV Transaksi
+                    </button>
+                    <a href="/export/csv" class="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl border border-emerald-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-excel"></i> Ekspor Semua Data ke CSV
+                    </a>
+                    <a href="/logout" class="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl border border-rose-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout dari Akun
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL 5: SET BUDGET LIMIT -->
+    <div x-show="openBudgetModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="openBudgetModal = false" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 space-y-4 text-xs">
+            <h3 class="font-black text-slate-800 text-sm">Set Budget Pengeluaran Bulanan</h3>
+            <input type="number" x-model="budgetInput" placeholder="misal: 5000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <button @click="saveLedgerBudget()" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md">
+                Simpan Budget
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 6: CREATE LEDGER -->
+    <div x-show="showCreateLedgerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="showCreateLedgerModal = false" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 space-y-4 text-xs">
+            <h3 class="font-black text-slate-800 text-sm">Buat Ledger Baru</h3>
+            <input type="text" x-model="newLedgerName" placeholder="misal: Kas Usaha / Kosan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <button @click="createSharedLedger()" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md">
+                Buat Ledger
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 7: JOIN LEDGER -->
+    <div x-show="showJoinLedgerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="showJoinLedgerModal = false" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 space-y-4 text-xs">
+            <h3 class="font-black text-slate-800 text-sm">Gabung Ledger via Kode</h3>
+            <input type="text" x-model="joinInviteCode" placeholder="Masukkan Kode Undangan (misal: SHARE-1-ABC)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <button @click="joinLedger()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-md">
+                Gabung Sekarang
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 8: IMPORT CSV TRANSAKSI -->
+    <div x-show="openImportCsvModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="openImportCsvModal = false" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 space-y-4 text-xs">
+            <h3 class="font-black text-slate-800 text-sm">Impor Transaksi dari File CSV</h3>
+            <p class="text-[10px] text-slate-400">Pilih file CSV hasil ekspor FinType atau format dengan header (Tanggal, Item, Nominal, Kategori, Tipe).</p>
+            <input type="file" id="csvImportFile" accept=".csv" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600">
+            <button @click="submitImportCsv()" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md">
+                Unggah & Impor Data
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 9: IMPORT JSON RULES -->
+    <div x-show="openImportRulesModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="openImportRulesModal = false" class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 space-y-4 text-xs">
+            <h3 class="font-black text-slate-800 text-sm">Import Aturan Regex (JSON)</h3>
+            <input type="file" id="jsonRulesFile" accept=".json" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-600">
+            <button @click="submitImportRules()" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md">
+                Impor Aturan JSON
+            </button>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX IMAGE MODAL -->
+    <div x-show="showImageLightbox" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4" x-cloak>
+        <div @click.outside="showImageLightbox = false" class="relative max-w-lg w-full">
+            <button @click="showImageLightbox = false" class="absolute -top-10 right-0 text-white text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img :src="lightboxImgUrl" class="w-full h-auto rounded-2xl shadow-2xl">
+        </div>
+    </div>
+
+
+    <!-- ALPINE.JS LOGIC -->
+    <script>
+        function fintypeApp() {
+            return {
+                currentTab: 'summary',
+                catTab: 'pengeluaran',
+                settingsTab: 'profile',
+                summaryPeriod: 'all',
+                user: null,
+                currentLedger: null,
+                ledgers: [],
+                ledgerMembers: [],
+                summary: { pemasukan: 0, pengeluaran: 0, net_balance: 0, goal_savings: 0 },
+                allTransactions: [], // UNFILTERED for summary, wallets & categories
+                transactions: [],    // FILTERED for History tab list
+                needActionTxns: [],
+                wallets: [],
+                categories: { pengeluaran: [], pemasukan: [] },
+                goals: [],
+                customRules: [],
+                aiInsights: [],
+                isLoadingAI: false,
+
+                // Input Modal states
+                showInputModal: false,
+                inputText: '',
+                inputNotes: '',
+                showNotesToggle: false,
+                showImageToggle: false,
+                isListening: false,
+                parsedResult: {
+                    type: 'Pengeluaran',
+                    aksi: 'Membeli',
+                    formatted_nominal: 'Rp 0',
+                    category: 'Lain-lain',
+                    item: '-',
+                    source_fund: 'Dompetku',
+                    target_fund: '-',
+                    date_time: '2026-10-26',
+                    is_complete: false
+                },
+                estimatedWalletInfo: { text: '-', is_ok: true },
+
+                // History Filter states
+                historySearch: '',
+                historyStartDate: '',
+                historyEndDate: '',
+
+                // Edit Transaction Modal states
+                showEditTxnModal: false,
+                editTxnData: {},
+
+                // Goal Modal states
+                showGoalModal: false,
+                isEditGoal: false,
+                goalForm: { id: null, title: '', target_amount: 0, current_amount: 0, target_date: '', keywords: '', image_url: '' },
+
+                // Settings, Profile & Custom Rules
+                openSettingsModal: false,
+                profileForm: { full_name: '', old_password: '', new_password: '' },
+                newRuleKey: '',
+                newRuleVal: '',
+                openImportRulesModal: false,
+
+                // Ledger & Budget
+                openBudgetModal: false,
+                budgetInput: 0,
+                showCreateLedgerModal: false,
+                showJoinLedgerModal: false,
+                newLedgerName: '',
+                joinInviteCode: '',
+
+                // Import CSV
+                openImportCsvModal: false,
+
+                // Image Lightbox
+                showImageLightbox: false,
+                lightboxImgUrl: '',
+
+                initData() {
+                    this.loadUserData();
+                    this.loadAllTransactions();
+                    this.loadHistory();
+                    this.loadCategories();
+                    this.loadWallets();
+                    this.loadGoals();
+                    this.loadCustomRules();
+                    this.loadAIAnalysis();
+                },
+
+                formatRupiah(num) {
+                    return 'Rp ' + (num || 0).toLocaleString('id-ID');
+                },
+
+                loadUserData() {
+                    fetch('/api/user-data')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.user = res.user;
+                            this.currentLedger = res.current_ledger;
+                            this.ledgers = res.ledgers;
+                            this.ledgerMembers = res.ledger_members || [];
+                            if (this.user) {
+                                this.profileForm.full_name = this.user.full_name;
+                            }
+                            if (this.currentLedger) {
+                                this.budgetInput = this.currentLedger.budget_limit || 0;
+                            }
+                        });
+                },
+
+                loadAllTransactions() {
+                    fetch('/api/transactions')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.allTransactions = res;
+                            this.calculateSummary();
+                            this.checkNeedAction();
+                        });
+                },
+
+                loadHistory() {
+                    let url = `/api/transactions?search=${encodeURIComponent(this.historySearch)}&start_date=${this.historyStartDate}&end_date=${this.historyEndDate}`;
+                    fetch(url)
+                        .then(r => r.json())
+                        .then(res => {
+                            this.transactions = res;
+                        });
+                },
+
+                resetHistoryFilter() {
+                    this.historySearch = '';
+                    this.historyStartDate = '';
+                    this.historyEndDate = '';
+                    this.loadHistory();
+                },
+
+                calculateSummary() {
+                    let pem = 0, peng = 0;
+                    let now = new Date();
+                    
+                    let filtered = this.allTransactions.filter(t => {
+                        if (this.summaryPeriod === 'this_month') {
+                            let d = new Date(t.date_time);
+                            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                        } else if (this.summaryPeriod === 'last_30') {
+                            let d = new Date(t.date_time);
+                            let diffDays = (now - d) / (1000 * 3600 * 24);
+                            return diffDays <= 30;
+                        }
+                        return true;
+                    });
+
+                    filtered.forEach(t => {
+                        if (t.type === 'Pemasukan') pem += t.nominal;
+                        else if (t.type === 'Pengeluaran') peng += t.nominal;
+                    });
+
+                    let goalSav = 0;
+                    this.goals.forEach(g => {
+                        goalSav += (g.calculated_amount || g.current_amount || 0);
+                    });
+
+                    this.summary = {
+                        pemasukan: pem,
+                        pengeluaran: peng,
+                        net_balance: pem - peng,
+                        goal_savings: goalSav
+                    };
+                },
+
+                checkNeedAction() {
+                    this.needActionTxns = this.allTransactions.filter(t => {
+                        return t.category === 'Lain-lain' || t.item === 'Pengeluaran General' || t.nominal <= 0;
+                    });
+                },
+
+                loadCategories() {
+                    fetch('/api/categories')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.categories = res;
+                        });
+                },
+
+                loadWallets() {
+                    fetch('/api/wallets')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.wallets = res;
+                        });
+                },
+
+                loadGoals() {
+                    fetch('/api/goals')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.goals = res;
+                            this.calculateSummary();
+                        });
+                },
+
+                loadCustomRules() {
+                    fetch('/api/custom-rules')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.customRules = res;
+                        });
+                },
+
+                loadAIAnalysis() {
+                    this.isLoadingAI = true;
+                    fetch('/api/ai-analysis')
+                        .then(r => r.json())
+                        .then(res => {
+                            this.aiInsights = res.insights;
+                        })
+                        .finally(() => { this.isLoadingAI = false; });
+                },
+
+                getCatTotalSum(type) {
+                    let cats = [];
+                    if (type === 'pengeluaran') cats = this.categories.pengeluaran || [];
+                    else if (type === 'pemasukan') cats = this.categories.pemasukan || [];
+                    else if (type === 'transfer') cats = this.categories.transfer || [];
+                    return cats.reduce((acc, c) => acc + c.total, 0);
+                },
+
+                getCatPercent(catTotal, type) {
+                    let totalSum = this.getCatTotalSum(type);
+                    if (!totalSum) return 0;
+                    return Math.round((catTotal / totalSum) * 100);
+                },
+
+                getCatColor(idx) {
+                    const colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+                    return colors[idx % colors.length];
+                },
+
+                filterHistoryByWallet(walletName) {
+                    this.historySearch = walletName;
+                    this.currentTab = 'history';
+                    this.loadHistory();
+                },
+
+                filterHistoryByCategory(catName) {
+                    this.historySearch = catName;
+                    this.currentTab = 'history';
+                    this.loadHistory();
+                },
+
+                openInputModal() {
+                    this.inputText = '';
+                    this.inputNotes = '';
+                    this.showNotesToggle = false;
+                    this.showImageToggle = false;
+                    this.updateParser();
+                    this.showInputModal = true;
+                },
+
+                updateParser() {
+                    if (!this.inputText) {
+                        this.parsedResult = {
+                            type: 'Pengeluaran',
+                            aksi: 'Membeli',
+                            formatted_nominal: 'Rp 0',
+                            category: 'Lain-lain',
+                            item: '-',
+                            source_fund: 'Dompetku',
+                            target_fund: '-',
+                            date_time: new Date().toISOString().split('T')[0],
+                            is_complete: false
+                        };
+                        this.calculateWalletEstimate();
+                        return;
+                    }
+
+                    fetch('/api/parse', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: this.inputText })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        this.parsedResult = res;
+                        this.calculateWalletEstimate();
+                    });
+                },
+
+                calculateWalletEstimate() {
+                    let p = this.parsedResult;
+                    let srcName = p.source_fund;
+                    let tgtName = p.target_fund;
+                    let nom = p.nominal || 0;
+
+                    let srcWallet = this.wallets.find(w => w.name.toLowerCase() === srcName.toLowerCase()) || { name: srcName, balance: 0 };
+                    let currentBal = srcWallet.balance;
+
+                    if (p.type === 'Pemasukan') {
+                        let finalBal = currentBal + nom;
+                        this.estimatedWalletInfo = {
+                            text: `🟢 ${srcWallet.name}: ${this.formatRupiah(currentBal)} + ${this.formatRupiah(nom)} = ${this.formatRupiah(finalBal)}`,
+                            is_ok: true
+                        };
+                    } else if (p.type === 'Transfer') {
+                        let finalBal = currentBal - nom;
+                        let isOk = finalBal >= 0;
+                        this.estimatedWalletInfo = {
+                            text: `${isOk ? '🟢' : '🔴'} ${srcWallet.name}: ${this.formatRupiah(currentBal)} - ${this.formatRupiah(nom)} = ${this.formatRupiah(finalBal)} (➔ ${tgtName})`,
+                            is_ok: isOk
+                        };
+                    } else if (p.type === 'Goal Savings') {
+                        let finalBal = currentBal - nom;
+                        let isOk = finalBal >= 0;
+                        this.estimatedWalletInfo = {
+                            text: `${isOk ? '🟢' : '🔴'} ${srcWallet.name}: ${this.formatRupiah(currentBal)} - ${this.formatRupiah(nom)} = ${this.formatRupiah(finalBal)} (➔ ${p.goal_title})`,
+                            is_ok: isOk
+                        };
+                    } else {
+                        let finalBal = currentBal - nom;
+                        let isOk = finalBal >= 0;
+                        this.estimatedWalletInfo = {
+                            text: `${isOk ? '🟢' : '🔴'} ${srcWallet.name}: ${this.formatRupiah(currentBal)} - ${this.formatRupiah(nom)} = ${this.formatRupiah(finalBal)}`,
+                            is_ok: isOk
+                        };
+                    }
+                },
+
+                toggleSpeechToText() {
+                    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                        alert('Browser Anda tidak mendukung Web Speech API.');
+                        return;
+                    }
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    const recognition = new SpeechRecognition();
+                    recognition.lang = 'id-ID';
+
+                    if (this.isListening) {
+                        recognition.stop();
+                        this.isListening = false;
+                        return;
+                    }
+
+                    this.isListening = true;
+                    recognition.start();
+
+                    recognition.onresult = (event) => {
+                        this.inputText = event.results[0][0].transcript;
+                        this.updateParser();
+                        this.isListening = false;
+                    };
+
+                    recognition.onerror = () => { this.isListening = false; };
+                    recognition.onend = () => { this.isListening = false; };
+                },
+
+                submitTransaction() {
+                    if (!this.inputText) {
+                        alert('Silakan tulis kalimat transaksi terlebih dahulu.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('raw_text', this.inputText);
+                    formData.append('notes', this.inputNotes);
+
+                    const fileInput = document.getElementById('inputReceiptFile');
+                    if (fileInput && fileInput.files[0]) {
+                        formData.append('receipt_image', fileInput.files[0]);
+                    }
+
+                    fetch('/api/transactions', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.showInputModal = false;
+                            this.initData();
+                        }
+                    });
+                },
+
+                openEditTransactionModal(t) {
+                    this.editTxnData = { ...t };
+                    this.showEditTxnModal = true;
+                },
+
+                reparseEditTxnLive() {
+                    if (!this.editTxnData.raw_text) return;
+                    fetch('/api/parse', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: this.editTxnData.raw_text })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        this.editTxnData.type = res.type;
+                        this.editTxnData.aksi = res.aksi;
+                        this.editTxnData.category = res.category;
+                        this.editTxnData.item = res.item;
+                        this.editTxnData.nominal = res.nominal;
+                        this.editTxnData.source_fund = res.source_fund;
+                        this.editTxnData.target_fund = res.target_fund;
+                        this.editTxnData.date_time = res.date_time;
+                    });
+                },
+
+                saveEditTransaction() {
+                    const formData = new FormData();
+                    formData.append('raw_text', this.editTxnData.raw_text || '');
+                    formData.append('type', this.editTxnData.type || 'Pengeluaran');
+                    formData.append('aksi', this.editTxnData.aksi || 'Membeli');
+                    formData.append('category', this.editTxnData.category || 'Lain-lain');
+                    formData.append('item', this.editTxnData.item || '-');
+                    formData.append('nominal', this.editTxnData.nominal || 0);
+                    formData.append('source_fund', this.editTxnData.source_fund || '-');
+                    formData.append('target_fund', this.editTxnData.target_fund || '-');
+                    formData.append('date_time', this.editTxnData.date_time || '');
+                    formData.append('notes', this.editTxnData.notes || '');
+
+                    const fileInput = document.getElementById('editReceiptFile');
+                    if (fileInput && fileInput.files[0]) {
+                        formData.append('receipt_image', fileInput.files[0]);
+                    }
+
+                    fetch(`/api/transactions/${this.editTxnData.id}`, {
+                        method: 'PUT',
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.showEditTxnModal = false;
+                            this.initData();
+                        }
+                    });
+                },
+
+                deleteTransaction(id) {
+                    if (confirm('Yakin ingin menghapus catatan transaksi ini?')) {
+                        fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+                            .then(r => r.json())
+                            .then(() => { this.initData(); });
+                    }
+                },
+
+                openAddGoalModal() {
+                    this.isEditGoal = false;
+                    this.goalForm = { id: null, title: '', target_amount: 0, current_amount: 0, target_date: new Date().toISOString().split('T')[0], keywords: '', image_url: '' };
+                    this.showGoalModal = true;
+                },
+
+                openEditGoalModal(g) {
+                    this.isEditGoal = true;
+                    this.goalForm = { ...g };
+                    this.showGoalModal = true;
+                },
+
+                saveGoal() {
+                    const formData = new FormData();
+                    formData.append('title', this.goalForm.title);
+                    formData.append('target_amount', this.goalForm.target_amount);
+                    formData.append('current_amount', this.goalForm.current_amount);
+                    formData.append('target_date', this.goalForm.target_date);
+                    formData.append('keywords', this.goalForm.keywords);
+                    formData.append('image_url', this.goalForm.image_url || '');
+
+                    const fileInput = document.getElementById('goalImageFile');
+                    if (fileInput && fileInput.files[0]) {
+                        formData.append('goal_image', fileInput.files[0]);
+                    }
+
+                    const url = this.isEditGoal ? `/api/goals/${this.goalForm.id}` : '/api/goals';
+                    const method = this.isEditGoal ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        body: formData
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.showGoalModal = false;
+                            this.loadGoals();
+                        }
+                    });
+                },
+
+                deleteGoal(id) {
+                    if (confirm('Yakin ingin menghapus Goal ini?')) {
+                        fetch(`/api/goals/${id}`, { method: 'DELETE' })
+                            .then(r => r.json())
+                            .then(() => { this.loadGoals(); });
+                    }
+                },
+
+                saveProfile() {
+                    fetch('/api/profile', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.profileForm)
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        alert(res.message);
+                        if (res.success) {
+                            this.profileForm.old_password = '';
+                            this.profileForm.new_password = '';
+                            this.loadUserData();
+                        }
+                    });
+                },
+
+                addCustomRule() {
+                    if (!this.newRuleKey || !this.newRuleVal) {
+                        alert('Silakan isi kata kunci dan kategori.');
+                        return;
+                    }
+
+                    fetch('/api/custom-rules', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rule_key: this.newRuleKey, rule_value: this.newRuleVal })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.newRuleKey = '';
+                            this.newRuleVal = '';
+                            this.loadCustomRules();
+                        }
+                    });
+                },
+
+                deleteCustomRule(id) {
+                    fetch(`/api/custom-rules/${id}`, { method: 'DELETE' })
+                        .then(r => r.json())
+                        .then(() => { this.loadCustomRules(); });
+                },
+
+                submitImportRules() {
+                    const fileInput = document.getElementById('jsonRulesFile');
+                    if (!fileInput || !fileInput.files[0]) {
+                        alert('Pilih file JSON terlebih dahulu.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('rules_file', fileInput.files[0]);
+
+                    fetch('/api/custom-rules/import', { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(res => {
+                            alert(res.message);
+                            if (res.success) {
+                                this.openImportRulesModal = false;
+                                this.loadCustomRules();
+                            }
+                        });
+                },
+
+                saveLedgerBudget() {
+                    fetch('/api/ledgers/budget', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ budget_limit: this.budgetInput })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.openBudgetModal = false;
+                            this.loadUserData();
+                        }
+                    });
+                },
+
+                switchLedger(id) {
+                    fetch('/api/ledgers/switch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ledger_id: id })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) this.initData();
+                    });
+                },
+
+                openCreateLedgerModal() {
+                    this.newLedgerName = '';
+                    this.showCreateLedgerModal = true;
+                },
+
+                createSharedLedger() {
+                    fetch('/api/ledgers/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: this.newLedgerName })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            this.showCreateLedgerModal = false;
+                            this.initData();
+                        }
+                    });
+                },
+
+                openJoinLedgerModal() {
+                    this.joinInviteCode = '';
+                    this.showJoinLedgerModal = true;
+                },
+
+                joinLedger() {
+                    fetch('/api/ledgers/join', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ invite_code: this.joinInviteCode })
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        alert(res.message);
+                        if (res.success) {
+                            this.showJoinLedgerModal = false;
+                            this.initData();
+                        }
+                    });
+                },
+
+                leaveCurrentLedger() {
+                    if (confirm('Yakin ingin keluar dari Shared Ledger ini?')) {
+                        fetch('/api/ledgers/leave', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ledger_id: this.currentLedger.id })
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.success) this.initData();
+                        });
+                    }
+                },
+
+                submitImportCsv() {
+                    const fileInput = document.getElementById('csvImportFile');
+                    if (!fileInput || !fileInput.files[0]) {
+                        alert('Silakan pilih file CSV terlebih dahulu.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('csv_file', fileInput.files[0]);
+
+                    fetch('/import/csv', { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(res => {
+                            alert(res.message);
+                            if (res.success) {
+                                this.openImportCsvModal = false;
+                                this.initData();
+                            }
+                        });
+                },
+
+                openImageLightbox(url) {
+                    this.lightboxImgUrl = url;
+                    this.showImageLightbox = true;
+                }
+            };
+        }
+    </script>
+</body>
+</html>
